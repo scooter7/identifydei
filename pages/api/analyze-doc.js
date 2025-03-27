@@ -3,10 +3,6 @@ import formidable from 'formidable';
 import fs from 'fs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-
-// ✅ Disable the worker properly for serverless environments
-GlobalWorkerOptions.workerSrc = '';
 
 export const config = {
   api: {
@@ -60,6 +56,14 @@ export default async function handler(req, res) {
 
       try {
         if (ext === 'pdf') {
+          // ✅ Dynamically import ONLY when needed
+          const pdfjsLib = require('pdfjs-dist');
+          const { getDocument, GlobalWorkerOptions } = pdfjsLib;
+
+          // Disable the worker
+          GlobalWorkerOptions.workerSrc = '';
+          pdfjsLib.disableWorker = true;
+
           const dataBuffer = fs.readFileSync(filePath);
           const uint8Array = new Uint8Array(dataBuffer);
           const pdfDocument = await getDocument({ data: uint8Array }).promise;
