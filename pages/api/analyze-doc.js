@@ -3,11 +3,16 @@ import formidable from 'formidable';
 import fs from 'fs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 
-// ✅ Disable worker to prevent worker import errors in Node.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// ✅ Disable Next.js body parsing to allow file uploads
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
+// 🔍 Helper to find keywords in text
 function searchKeywords(text, keywords) {
   const found = [];
   const textLower = text.toLowerCase();
@@ -18,12 +23,6 @@ function searchKeywords(text, keywords) {
   }
   return [...new Set(found)];
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
