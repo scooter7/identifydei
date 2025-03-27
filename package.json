@@ -15,14 +15,13 @@
     "next": "^15.2.4",
     "openai": "^4.89.1",
     "pdf-parse": "^1.1.1",
-    "pdfjs-dist": "^2.16.105",
     "react": "18.x",
     "react-dom": "18.x",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss7-compat": "^2.2.17",
-    "autoprefixer": "^9.8.8",
+    "autoprefixer": "^10.4.21",
     "postcss": "^7.0.39",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.17"
   }
