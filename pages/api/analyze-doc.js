@@ -3,11 +3,10 @@ import formidable from 'formidable';
 import fs from 'fs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// ✅ Disable PDF.js worker to fix Vercel build/runtime errors
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
-pdfjsLib.disableWorker = true;
+// ✅ Disable the worker properly for serverless environments
+GlobalWorkerOptions.workerSrc = '';
 
 export const config = {
   api: {
@@ -15,7 +14,6 @@ export const config = {
   },
 };
 
-// 🔍 Helper function to find keywords
 function searchKeywords(text, keywords) {
   const found = [];
   const textLower = text.toLowerCase();
@@ -64,7 +62,7 @@ export default async function handler(req, res) {
         if (ext === 'pdf') {
           const dataBuffer = fs.readFileSync(filePath);
           const uint8Array = new Uint8Array(dataBuffer);
-          const pdfDocument = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+          const pdfDocument = await getDocument({ data: uint8Array }).promise;
           const numPages = pdfDocument.numPages;
 
           for (let i = 1; i <= numPages; i++) {
