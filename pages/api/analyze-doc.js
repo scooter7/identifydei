@@ -3,6 +3,7 @@ import formidable from 'formidable';
 import fs from 'fs';
 import mammoth from 'mammoth';
 import xlsx from 'xlsx';
+import pdfParse from 'pdf-parse';
 
 export const config = {
   api: {
@@ -56,28 +57,14 @@ export default async function handler(req, res) {
 
       try {
         if (ext === 'pdf') {
-          // ✅ Dynamically import ONLY when needed
-          const pdfjsLib = require('pdfjs-dist');
-          const { getDocument, GlobalWorkerOptions } = pdfjsLib;
-
-          // Disable the worker
-          GlobalWorkerOptions.workerSrc = '';
-          pdfjsLib.disableWorker = true;
-
           const dataBuffer = fs.readFileSync(filePath);
-          const uint8Array = new Uint8Array(dataBuffer);
-          const pdfDocument = await getDocument({ data: uint8Array }).promise;
-          const numPages = pdfDocument.numPages;
+          const pdfData = await pdfParse(dataBuffer);
 
-          for (let i = 1; i <= numPages; i++) {
-            const page = await pdfDocument.getPage(i);
-            const content = await page.getTextContent();
-            const pageText = content.items.map(item => item.str).join(' ');
-            const found = searchKeywords(pageText, KEYWORDS);
-            if (found.length > 0) {
-              docAnalysis.push({ page: i, keywords_found: found });
-            }
+          const found = searchKeywords(pdfData.text, KEYWORDS);
+          if (found.length > 0) {
+            docAnalysis.push({ section: 'Full PDF Text', keywords_found: found });
           }
+
         } else if (ext === 'docx' || ext === 'doc') {
           const result = await mammoth.extractRawText({ path: filePath });
           const text = result.value;
@@ -85,6 +72,7 @@ export default async function handler(req, res) {
           if (found.length > 0) {
             docAnalysis.push({ section: 'Full DOCX', keywords_found: found });
           }
+
         } else if (ext === 'xlsx' || ext === 'xls') {
           const workbook = xlsx.readFile(filePath);
           workbook.SheetNames.forEach(sheetName => {
@@ -95,12 +83,14 @@ export default async function handler(req, res) {
               docAnalysis.push({ sheet: sheetName, keywords_found: found });
             }
           });
+
         } else if (ext === 'txt') {
           const txtData = fs.readFileSync(filePath, 'utf-8');
           const found = searchKeywords(txtData, KEYWORDS);
           if (found.length > 0) {
             docAnalysis.push({ section: 'Full TXT', keywords_found: found });
           }
+
         } else {
           docAnalysis.push({ error: 'Unsupported file type' });
         }
