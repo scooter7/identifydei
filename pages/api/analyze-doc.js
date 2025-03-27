@@ -5,14 +5,17 @@ import mammoth from 'mammoth';
 import xlsx from 'xlsx';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 
-// ✅ Disable Next.js body parsing to allow file uploads
+// ✅ Disable PDF.js worker to fix Vercel build/runtime errors
+pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+pdfjsLib.disableWorker = true;
+
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// 🔍 Helper to find keywords in text
+// 🔍 Helper function to find keywords
 function searchKeywords(text, keywords) {
   const found = [];
   const textLower = text.toLowerCase();
