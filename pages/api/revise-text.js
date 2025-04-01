@@ -11,26 +11,43 @@ export default async function handler(req, res) {
   }
 
   const { text } = req.body;
-
   if (!text) {
     return res.status(400).json({ error: 'No input text provided' });
   }
 
-  // Build prompt that avoids all glossary keywords
-  const filteredKeywords = KEYWORDS.join(', ');
-  const systemPrompt = `You are a content editor. Your job is to revise input text to remove and replace any terms that appear in this glossary:\n\n${filteredKeywords}\n\nMake sure the new version does not include or allude to any of these terms. Write clearly and neutrally.`;
+  // Create bullet list of keywords
+  const keywordList = KEYWORDS.map(kw => `- ${kw.keyword || kw}`).join('\n');
+  const systemPrompt = `
+You are a content editor. Your job is to revise text to remove or replace any terms that appear in the following glossary. 
+Do not reference, allude to, or reword them in a way that keeps their original ideological implication.
+
+Glossary of Prohibited Terms:
+${keywordList}
+
+Be neutral and professional. Do not make the text sound ideological. Make it sound clean, straightforward, and non-political.
+`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: systemPrompt.trim() },
         { role: 'user', content: text }
       ],
     });
 
     const revisedText = completion.choices[0].message.content;
-    return res.status(200).json({ revised: revisedText });
+
+    // Optional post-filter: highlight any missed keywords (QA step)
+    const remaining = KEYWORDS.filter(({ keyword }) =>
+      revisedText.toLowerCase().includes(keyword.toLowerCase())
+    ).map(k => k.keyword);
+
+    return res.status(200).json({ 
+      revised: revisedText,
+      remaining_keywords: remaining
+    });
+
   } catch (err) {
     console.error('Error during OpenAI call:', err);
     return res.status(500).json({ error: 'Failed to generate revision' });
